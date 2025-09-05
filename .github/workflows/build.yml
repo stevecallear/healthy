@@ -24,8 +24,8 @@ jobs:
       - name: Build
         run: |
           go vet ./...
-          go test ./... -race -coverprofile=coverage.out -covermode=atomic
+          go test ./... -race -coverprofile=coverage.txt -covermode=atomic
       - name: Coverage
-        uses: codecov/codecov-action@v4.0.1
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
