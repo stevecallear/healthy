@@ -55,7 +55,7 @@ func TestNewCheck(t *testing.T) {
 			if act := c.Info(); !maps.Equal(act, tt.exp) {
 				t.Errorf("got %v, expected %v", act, tt.exp)
 			}
-			if err := c.Healthy(t.Context()); err != nil {
+			if err := c.Healthy(context.Background()); err != nil {
 				t.Errorf("got %v, expected nil", err)
 			}
 		})
