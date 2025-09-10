@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func File(path string) Check {
+func File(path string) InfoCheck {
 	return NewCheck(func(ctx context.Context) error {
 		_, err := os.Stat(path)
 		return err

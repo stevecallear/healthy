@@ -9,6 +9,10 @@ import (
 type (
 	Check interface {
 		Healthy(ctx context.Context) error
+	}
+
+	InfoCheck interface {
+		Check
 		Info() Info
 	}
 
@@ -33,7 +37,7 @@ type (
 	}
 )
 
-func NewCheck(fn CheckFunc, info ...string) Check {
+func NewCheck(fn CheckFunc, info ...string) InfoCheck {
 	if fn == nil {
 		panic("fn must not be nil")
 	}
@@ -51,6 +55,10 @@ func NewCheck(fn CheckFunc, info ...string) Check {
 	}
 
 	return c
+}
+
+func (c CheckFunc) Healthy(ctx context.Context) error {
+	return c(ctx)
 }
 
 func (c *check) Healthy(ctx context.Context) error {
