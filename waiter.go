@@ -136,10 +136,9 @@ func (o options) contextWithCancel() (context.Context, func()) {
 
 	if ctx == nil {
 		ctx = context.Background()
-
-		if o.timeout > 0 {
-			ctx, cancel = context.WithTimeout(ctx, o.timeout)
-		}
+	}
+	if o.timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, o.timeout)
 	}
 
 	return ctx, cancel
