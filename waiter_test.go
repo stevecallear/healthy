@@ -102,6 +102,17 @@ func TestWithContext(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("should accept zero timeout", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			err := sut.Wait(healthy.WithContext(ctx), healthy.WithTimeout(0)) // use supplied context to control timeout
+			if err == nil {
+				t.Error("got nil, expected error")
+			}
+		})
+	})
 }
 
 func TestWithCallback(t *testing.T) {
