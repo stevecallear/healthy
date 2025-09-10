@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"testing"
 	"testing/synctest"
+	"time"
 
 	"github.com/stevecallear/healthy"
 )
@@ -78,18 +79,28 @@ func TestExecutor_Wait(t *testing.T) {
 }
 
 func TestWithContext(t *testing.T) {
-	t.Run("should use the context", func(t *testing.T) {
-		sut := healthy.New(healthy.NewCheck(func(ctx context.Context) error {
-			return errors.New("error")
-		}))
+	sut := healthy.New(healthy.NewCheck(func(ctx context.Context) error {
+		return errors.New("error")
+	}))
 
+	t.Run("should use the context", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel() // cancel immediately
 
-		err := sut.Wait(healthy.WithContext(ctx))
+		err := sut.Wait(healthy.WithContext(ctx), healthy.WithTimeout(time.Second))
 		if err == nil {
 			t.Error("got nil, expected error")
 		}
+	})
+
+	t.Run("should apply the timeout to the supplied context", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			ctx := context.Background()
+			err := sut.Wait(healthy.WithContext(ctx), healthy.WithTimeout(time.Millisecond))
+			if err == nil {
+				t.Error("got nil, expected error")
+			}
+		})
 	})
 }
 
