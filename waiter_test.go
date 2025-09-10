@@ -33,7 +33,7 @@ func TestExecutor_Wait(t *testing.T) {
 	})
 
 	t.Run("should abort on fatal error", func(t *testing.T) {
-		err := healthy.New(healthy.NewCheck(func(ctx context.Context) error {
+		err := healthy.New(healthy.CheckFunc(func(ctx context.Context) error {
 			return healthy.Fatal(errors.New("fatal"))
 		})).Wait()
 		if !healthy.IsFatal(err) {
@@ -59,7 +59,7 @@ func TestExecutor_Wait(t *testing.T) {
 	t.Run("should wait for check", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			var n int32
-			err := healthy.New(healthy.NewCheck(func(ctx context.Context) error {
+			err := healthy.New(healthy.CheckFunc(func(ctx context.Context) error {
 				if atomic.LoadInt32(&n) < 1 {
 					return errors.New("error")
 				}
@@ -79,7 +79,7 @@ func TestExecutor_Wait(t *testing.T) {
 }
 
 func TestWithContext(t *testing.T) {
-	sut := healthy.New(healthy.NewCheck(func(ctx context.Context) error {
+	sut := healthy.New(healthy.CheckFunc(func(ctx context.Context) error {
 		return errors.New("error")
 	}))
 

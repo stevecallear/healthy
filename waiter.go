@@ -59,7 +59,11 @@ func (w *Waiter) Wait(opts ...Option) error {
 	for _, cc := range w.checks {
 		g.Go(func() error {
 			attempt := 1
-			info := maps.Clone(cc.Info())
+
+			var info Info
+			if ic, ok := cc.(InfoCheck); ok {
+				info = maps.Clone(ic.Info())
+			}
 
 			for {
 				err := cc.Healthy(ctx)

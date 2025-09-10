@@ -17,7 +17,7 @@ err := healthy.New(
 ```
 
 ## Checks
-Healthy includes checks for TCP, HTTP and files. Additional checks can be added by implementing `healthy.Check`. Alternatively `healthy.NewCheck` returns a new check using a supplied `CheckFunc` and information:
+Healthy includes checks for TCP, HTTP and files. Additional checks can be added by implementing `healthy.Check` or providing a `healthy.CheckFunc`. Additional information can be added to the check using either `healthy.NewCheck` or implementing `healthy.InfoCheck`. This is passed to the callback func if registered and would typically be used for logging (see example below).
 ```
 c := healthy.NewCheck(func(ctx context.Context) error {
     // implement check
