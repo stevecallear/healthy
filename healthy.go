@@ -5,24 +5,11 @@ import (
 	"errors"
 	"maps"
 	"math/rand/v2"
+	"strconv"
 	"time"
-
-	"golang.org/x/sync/errgroup"
 )
 
 type (
-	Waiter struct {
-		checks []Check
-	}
-
-	Result struct {
-		Attempt int
-		Info    Info
-		Err     error
-	}
-
-	CallbackFunc func(ctx context.Context, r Result)
-
 	Option func(*options)
 
 	options struct {
@@ -32,7 +19,11 @@ type (
 		jitter   time.Duration
 		callback CallbackFunc
 	}
+
+	CallbackFunc func(ctx context.Context, err error)
 )
+
+const mdKeyAttempt = "attempt"
 
 var defaultOptions = options{
 	timeout: 30 * time.Second,
@@ -40,68 +31,47 @@ var defaultOptions = options{
 	jitter:  100 * time.Millisecond,
 }
 
-func New(c ...Check) *Waiter {
-	return &Waiter{
-		checks: c,
-	}
-}
-
-func (w *Waiter) Wait(opts ...Option) error {
-	if len(w.checks) < 1 {
+func Wait(c Check, opts ...Option) error {
+	if c == nil {
 		return nil
 	}
 
-	o := w.getOptions(opts)
-	ctx, cancel := o.contextWithCancel()
-	defer cancel()
-
-	g, ctx := errgroup.WithContext(ctx)
-	for _, cc := range w.checks {
-		g.Go(func() error {
-			attempt := 1
-
-			var info Info
-			if ic, ok := cc.(InfoCheck); ok {
-				info = maps.Clone(ic.Info())
-			}
-
-			for {
-				err := cc.Healthy(ctx)
-				if o.callback != nil {
-					// callback must be synchronous to avoid data race on err
-					o.callback(ctx, Result{
-						Err:     err,
-						Info:    info,
-						Attempt: attempt,
-					})
-				}
-				if err == nil {
-					return nil
-				}
-
-				if IsFatal(err) {
-					return err
-				}
-
-				select {
-				case <-time.After(o.calculateDelay()):
-				case <-ctx.Done():
-					return errors.Join(context.Cause(ctx), err)
-				}
-				attempt++
-			}
-		})
-	}
-
-	return g.Wait()
-}
-
-func (w *Waiter) getOptions(opts []Option) options {
 	o := defaultOptions
 	for _, opt := range opts {
 		opt(&o)
 	}
-	return o
+
+	ctx, cancel := o.contextWithCancel()
+	defer cancel()
+
+	attempt := 1
+	md := GetContextMetadata(ctx)
+	if mc, ok := c.(MetadataCheck); ok {
+		maps.Copy(md, mc.Metadata())
+	}
+
+	for {
+		md.Set(mdKeyAttempt, strconv.Itoa(attempt))
+		mdctx := SetContextMetadata(ctx, md)
+
+		err := c.Healthy(mdctx)
+		if o.callback != nil {
+			o.callback(mdctx, err)
+		}
+		if IsFatal(err) {
+			return err
+		}
+		if err == nil {
+			return nil
+		}
+
+		select {
+		case <-time.After(o.calculateDelay()):
+		case <-ctx.Done():
+			return errors.Join(context.Cause(ctx), err)
+		}
+		attempt++
+	}
 }
 
 func WithContext(ctx context.Context) Option {

@@ -40,8 +40,8 @@ func TestTCPCheck_Healthy(t *testing.T) {
 func TestTCP_Info(t *testing.T) {
 	t.Run("should return the check info", func(t *testing.T) {
 		const target = "localhost:8080"
-		exp := healthy.Info{"type": "tcp", "target": target, "timeout": "500ms"}
-		act := healthy.TCP(target).Timeout(500 * time.Millisecond).Info()
+		exp := healthy.Metadata{"type": "tcp", "target": target, "timeout": "500ms"}
+		act := healthy.TCP(target).Timeout(500 * time.Millisecond).Metadata()
 		if !maps.Equal(act, exp) {
 			t.Errorf("got %v, expected %v", act, exp)
 		}

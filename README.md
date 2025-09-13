@@ -10,16 +10,16 @@
 go get github.com/stevecallear/healthy@latest
 ```
 ```
-err := healthy.New(
-    healthy.TCP("http://dynamodb:8000"),
-    healthy.HTTP("http://dependency:8080/health").Expect(http.StatusOK),
-).Wait()
+err := healthy.Wait(healthy.HTTP("http://dependency:8080/healthy").Expect(http.StatusOK))
 ```
 
 ## Checks
-Healthy includes checks for TCP, HTTP and files. Additional checks can be added by implementing `healthy.Check` or providing a `healthy.CheckFunc`. Additional information can be added to the check using either `healthy.NewCheck` or implementing `healthy.InfoCheck`. This is passed to the callback func if registered and would typically be used for logging (see example below).
+Healthy includes checks for TCP, HTTP and files. Additional checks can be added by implementing `Check` or providing a `CheckFunc`. 
+
+## Metadata
+Check metadata can be provided by implementing `MetadataCheck` or wrapping a `CheckFunc` with `WithMetadata`.
 ```
-c := healthy.NewCheck(func(ctx context.Context) error {
+c := healthy.WithMetadata(func(ctx context.Context) error {
     // implement check
 }, "type", "custom", "target", "something")
 ```
@@ -27,22 +27,46 @@ c := healthy.NewCheck(func(ctx context.Context) error {
 ## Execution
 While checks can be executed directly by calling `check.Healthy`, they are intended to be executed as a group with multiple attempts using `healthy.New(checks...).Wait()`. `Wait` accepts a number of execution options relating to context, timeout and delay. Checks are executed until either context cancellation or timeout, specified via `WithContext` or `WithTimeout` respectively.
 
-`WithCallback` accepts a callback function that is invoked for each check execution and includes the check info, attempt and result. The following example logs the result using `slog`:
+`WithCallback` accepts a callback function that is invoked for each check execution and error. The following example logs the result using `slog`:
 ```
-healthy.New(healthy.TCP("http://dynamodb:8000")).
-    Wait(healthy.WithCallback(func(ctx context.Context, r healthy.Result) {
-        level := slog.LevelInfo
-        args := []any{"attempt", r.Attempt}
-
-        if r.Err != nil {
-            level = slog.LevelError
-            args = append(args, "err", r.Err.Error())
-        }
-
-        for k, v := range r.Info {
+healthy.Wait(
+    healthy.TCP("host:8080"),
+    healthy.WithCallback(func(ctx context.Context, err error) {
+        args := []any{}
+        for k, v := range healthy.GetContextMetadata(ctx) {
             args = append(args, k, v)
         }
 
-        slog.Log(context.Background(), level, "check attempted", args...)
-    }))
+        level := slog.LevelInfo
+        if err != nil {
+            level = slog.LevelError
+            args = append(args, "err", err)
+        }
+
+        slog.Log(ctx, level, "health check result", args...)  
+    }),
+)
+```
+
+## Parallel Checks
+The initial implementation of the module allowed multiple checks to be executed in parallel. While convenient, this created a confused API and limited configuration for what was effectively a wrapper over `errgroup.Group`.
+
+If parallel check execution is desired, then it is trivial (if a bit more verbose) to execute them using `errgroup`:
+```
+g, ctx := errgroup.WithContext(context.Background())
+g.Go(func() error {
+    return healthy.Wait(
+        healthy.TCP("host:8080"),
+        healthy.WithContext(ctx),
+        healthy.WithCallback(callback),
+    )
+})
+g.Go(func() error {
+    return healthy.Wait(
+        healthy.HTTP("http://dependency:8080/health"),
+        healthy.WithContext(ctx),
+        healthy.WithCallback(callback),
+    )
+})
+err = g.Wait()
 ```
