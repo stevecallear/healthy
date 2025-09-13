@@ -5,8 +5,8 @@ import (
 	"os"
 )
 
-func File(path string) InfoCheck {
-	return NewCheck(func(ctx context.Context) error {
+func File(path string) MetadataCheck {
+	return WithMetadata(func(ctx context.Context) error {
 		_, err := os.Stat(path)
 		return err
 	}, "type", "file", "target", path)

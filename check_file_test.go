@@ -47,8 +47,8 @@ func TestFile_Check(t *testing.T) {
 func TestFile_Info(t *testing.T) {
 	t.Run("should return the check info", func(t *testing.T) {
 		const file = "test.txt"
-		exp := healthy.Info{"type": "file", "target": file}
-		act := healthy.File(file).Info()
+		exp := healthy.Metadata{"type": "file", "target": file}
+		act := healthy.File(file).Metadata()
 		if !maps.Equal(act, exp) {
 			t.Errorf("got %v, expected %v", act, exp)
 		}

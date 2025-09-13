@@ -15,9 +15,8 @@ func ExampleNew() {
 	close := startHTTPDelayed(addr, 100*time.Millisecond)
 	defer close()
 
-	err := healthy.New(
+	err := healthy.Wait(
 		healthy.HTTP(url).Timeout(time.Millisecond).Expect(http.StatusOK),
-	).Wait(
 		healthy.WithTimeout(time.Second),
 		healthy.WithDelay(10*time.Millisecond),
 		healthy.WithJitter(0),

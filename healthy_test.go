@@ -12,9 +12,9 @@ import (
 	"github.com/stevecallear/healthy"
 )
 
-func TestExecutor_Wait(t *testing.T) {
-	t.Run("should return nil for zero checks", func(t *testing.T) {
-		err := healthy.New().Wait()
+func TestWait(t *testing.T) {
+	t.Run("should return nil for nil check", func(t *testing.T) {
+		err := healthy.Wait(nil)
 		if err != nil {
 			t.Errorf("got %v, expected nil", err)
 		}
@@ -25,7 +25,7 @@ func TestExecutor_Wait(t *testing.T) {
 			fn, close := tempFile()
 			close() // remove immediately
 
-			err := healthy.New(healthy.File(fn)).Wait()
+			err := healthy.Wait(healthy.File(fn))
 			if err == nil {
 				t.Errorf("got nil, expected error")
 			}
@@ -33,41 +33,27 @@ func TestExecutor_Wait(t *testing.T) {
 	})
 
 	t.Run("should abort on fatal error", func(t *testing.T) {
-		err := healthy.New(healthy.CheckFunc(func(ctx context.Context) error {
+		err := healthy.Wait(healthy.CheckFunc(func(ctx context.Context) error {
 			return healthy.Fatal(errors.New("fatal"))
-		})).Wait()
+		}))
 		if !healthy.IsFatal(err) {
 			t.Errorf("got %v, expected fatal error", err)
 		}
 	})
 
-	t.Run("should require all checks", func(t *testing.T) {
-		f1, c1 := tempFile()
-		defer c1()
-
-		f2, c2 := tempFile()
-		c2() // remove immediately
-
-		synctest.Test(t, func(t *testing.T) {
-			err := healthy.New(healthy.File(f1), healthy.File(f2)).Wait()
-			if err == nil {
-				t.Errorf("got nil, expected error")
-			}
-		})
-	})
-
 	t.Run("should wait for check", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			var n int32
-			err := healthy.New(healthy.CheckFunc(func(ctx context.Context) error {
-				if atomic.LoadInt32(&n) < 1 {
-					return errors.New("error")
-				}
-				return nil
-			}),
-			).Wait(healthy.WithCallback(func(ctx context.Context, r healthy.Result) {
-				atomic.AddInt32(&n, 1)
-			}))
+			err := healthy.Wait(
+				healthy.CheckFunc(func(ctx context.Context) error {
+					if atomic.LoadInt32(&n) < 1 {
+						return errors.New("error")
+					}
+					return nil
+				}),
+				healthy.WithCallback(func(ctx context.Context, err error) {
+					atomic.AddInt32(&n, 1)
+				}))
 			if err != nil {
 				t.Errorf("got %v, expected nil", err)
 			}
@@ -79,15 +65,15 @@ func TestExecutor_Wait(t *testing.T) {
 }
 
 func TestWithContext(t *testing.T) {
-	sut := healthy.New(healthy.CheckFunc(func(ctx context.Context) error {
+	check := healthy.CheckFunc(func(ctx context.Context) error {
 		return errors.New("error")
-	}))
+	})
 
 	t.Run("should use the context", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel() // cancel immediately
 
-		err := sut.Wait(healthy.WithContext(ctx), healthy.WithTimeout(time.Second))
+		err := healthy.Wait(check, healthy.WithContext(ctx), healthy.WithTimeout(time.Second))
 		if err == nil {
 			t.Error("got nil, expected error")
 		}
@@ -96,7 +82,7 @@ func TestWithContext(t *testing.T) {
 	t.Run("should apply the timeout to the supplied context", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			ctx := context.Background()
-			err := sut.Wait(healthy.WithContext(ctx), healthy.WithTimeout(time.Millisecond))
+			err := healthy.Wait(check, healthy.WithContext(ctx), healthy.WithTimeout(time.Millisecond))
 			if err == nil {
 				t.Error("got nil, expected error")
 			}
@@ -107,7 +93,7 @@ func TestWithContext(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
-			err := sut.Wait(healthy.WithContext(ctx), healthy.WithTimeout(0)) // use supplied context to control timeout
+			err := healthy.Wait(check, healthy.WithContext(ctx), healthy.WithTimeout(0)) // use supplied context to control timeout
 			if err == nil {
 				t.Error("got nil, expected error")
 			}
@@ -120,26 +106,28 @@ func TestWithCallback(t *testing.T) {
 		const ctype = "test"
 
 		exp := errors.New("error")
-		sut := healthy.New(healthy.NewCheck(func(ctx context.Context) error {
+		check := healthy.WithMetadata(func(ctx context.Context) error {
 			return exp
-		}, "type", ctype))
+		}, "type", ctype)
 
 		synctest.Test(t, func(t *testing.T) {
-			var res healthy.Result
-			mu := new(sync.Mutex)
+			var md healthy.Metadata
+			var cerr error
 
-			sut.Wait(healthy.WithCallback(func(ctx context.Context, r healthy.Result) {
+			mu := new(sync.Mutex)
+			healthy.Wait(check, healthy.WithCallback(func(ctx context.Context, err error) {
 				mu.Lock()
 				defer mu.Unlock()
-				res = r
+				md = healthy.GetContextMetadata(ctx)
+				cerr = err
 			}))
 
 			synctest.Wait()
 
-			if act, exp := res.Info["type"], ctype; act != exp {
+			if act, exp := md["type"], ctype; act != exp {
 				t.Errorf("got %s, expected %s", act, exp)
 			}
-			if act, exp := res.Err, exp; act != exp {
+			if act, exp := cerr, exp; act != exp {
 				t.Errorf("got %v, expected %v", act, exp)
 			}
 		})

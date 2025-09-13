@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+type HTTPCheck struct {
+	client     *http.Client
+	url        string
+	statusCode int
+}
+
 func HTTP(url string) *HTTPCheck {
 	return &HTTPCheck{
 		client:     &http.Client{Timeout: time.Second},
@@ -43,8 +49,8 @@ func (c *HTTPCheck) Healthy(ctx context.Context) error {
 	return nil
 }
 
-func (c *HTTPCheck) Info() Info {
-	return Info{
+func (c *HTTPCheck) Metadata() Metadata {
+	return Metadata{
 		"type":    "http",
 		"target":  c.url,
 		"timeout": c.client.Timeout.String(),

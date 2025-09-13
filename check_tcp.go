@@ -6,6 +6,11 @@ import (
 	"time"
 )
 
+type TCPCheck struct {
+	addr    string
+	timeout time.Duration
+}
+
 func TCP(addr string) *TCPCheck {
 	return &TCPCheck{
 		addr:    addr,
@@ -28,8 +33,8 @@ func (c *TCPCheck) Healthy(ctx context.Context) error {
 	return nil
 }
 
-func (c *TCPCheck) Info() Info {
-	return Info{
+func (c *TCPCheck) Metadata() Metadata {
+	return Metadata{
 		"type":    "tcp",
 		"target":  c.addr,
 		"timeout": c.timeout.String(),
