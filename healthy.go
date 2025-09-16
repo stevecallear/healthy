@@ -10,6 +10,7 @@ import (
 )
 
 type (
+	// Option represents an execution option
 	Option func(*options)
 
 	options struct {
@@ -20,6 +21,8 @@ type (
 		callback CallbackFunc
 	}
 
+	// CallbackFunc represents an execution callback function
+	// The function is invoked on each health check invocation.
 	CallbackFunc func(ctx context.Context, err error)
 )
 
@@ -31,6 +34,8 @@ var defaultOptions = options{
 	jitter:  100 * time.Millisecond,
 }
 
+// Wait executes the check using the supplied options
+// Checks are retried until successful execution or option limits are reached.
 func Wait(c Check, opts ...Option) error {
 	if c == nil {
 		return nil
@@ -74,30 +79,41 @@ func Wait(c Check, opts ...Option) error {
 	}
 }
 
+// WithContext uses the supplied context for check execution
+// This allows alternative context cancellations to be specified.
 func WithContext(ctx context.Context) Option {
 	return func(o *options) {
 		o.ctx = ctx
 	}
 }
 
-func WithDelay(d time.Duration) Option {
-	return func(o *options) {
-		o.delay = d
-	}
-}
-
+// WithTimeout specifies the retry execution timeout
+// Retry execution will be cancelled either on the cancellation of a
+// supplied context or after the timeout has elapsed.
+// The default value is 30 seconds.
 func WithTimeout(t time.Duration) Option {
 	return func(o *options) {
 		o.timeout = t
 	}
 }
 
+// WithDelay specifies the retry delay between check executions
+// The default value is one second.
+func WithDelay(d time.Duration) Option {
+	return func(o *options) {
+		o.delay = d
+	}
+}
+
+// WithJitter specifies an optional maximum jitter to apply to the delay
+// The default value is 100 milliseconds.
 func WithJitter(j time.Duration) Option {
 	return func(o *options) {
 		o.jitter = j
 	}
 }
 
+// WithCallback specifies the callback function to be invoked after check execution
 func WithCallback(fn CallbackFunc) Option {
 	return func(o *options) {
 		o.callback = fn
