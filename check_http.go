@@ -7,12 +7,14 @@ import (
 	"time"
 )
 
+// HTTPCheck represents an HTTP health check
 type HTTPCheck struct {
 	client     *http.Client
 	url        string
 	statusCode int
 }
 
+// HTTP returns an HTTP health check
 func HTTP(url string) *HTTPCheck {
 	return &HTTPCheck{
 		client:     &http.Client{Timeout: time.Second},
@@ -21,16 +23,19 @@ func HTTP(url string) *HTTPCheck {
 	}
 }
 
+// Timout specifies the HTTP client timeout
 func (c *HTTPCheck) Timeout(t time.Duration) *HTTPCheck {
 	c.client.Timeout = t
 	return c
 }
 
+// Expect specifies the expected status code
 func (c *HTTPCheck) Expect(statusCode int) *HTTPCheck {
 	c.statusCode = statusCode
 	return c
 }
 
+// Healthy returns true if the target URL returns the expected status code
 func (c *HTTPCheck) Healthy(ctx context.Context) error {
 	req, err := http.NewRequest(http.MethodGet, c.url, nil)
 	if err != nil {
@@ -49,6 +54,7 @@ func (c *HTTPCheck) Healthy(ctx context.Context) error {
 	return nil
 }
 
+// Metadata returns the check metadata
 func (c *HTTPCheck) Metadata() Metadata {
 	return Metadata{
 		"type":    "http",
