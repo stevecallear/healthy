@@ -30,7 +30,7 @@ func WithMetadata(fn CheckFunc, pairs ...any) MetadataCheck {
 		panic("fn must not be nil")
 	}
 	if len(pairs)%2 != 0 {
-		panic("info must be key value pairs")
+		panic("metadata must be key value pairs")
 	}
 
 	c := &metadataCheck{
