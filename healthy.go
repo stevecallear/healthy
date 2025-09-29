@@ -114,7 +114,7 @@ func WithDelay(d time.Duration) Option {
 }
 
 // WithJitter specifies an optional maximum jitter to apply to the delay.
-// The default value is 100 milliseconds.
+// The default value is no jitter.
 func WithJitter(j time.Duration) Option {
 	return func(o *options) {
 		o.jitter = j
