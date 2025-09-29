@@ -37,8 +37,8 @@ func TestTCPCheck_Healthy(t *testing.T) {
 	})
 }
 
-func TestTCP_Info(t *testing.T) {
-	t.Run("should return the check info", func(t *testing.T) {
+func TestTCP_Metadata(t *testing.T) {
+	t.Run("should return the check metadata", func(t *testing.T) {
 		const target = "localhost:8080"
 		exp := healthy.Metadata{"type": "tcp", "target": target, "timeout": "500ms"}
 		act := healthy.TCP(target).Timeout(500 * time.Millisecond).Metadata()

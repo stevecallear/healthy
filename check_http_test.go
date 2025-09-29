@@ -56,7 +56,7 @@ func TestHTTPCheck_Healthy(t *testing.T) {
 }
 
 func TestHTTP_Metadata(t *testing.T) {
-	t.Run("should return the check info", func(t *testing.T) {
+	t.Run("should return the check metadata", func(t *testing.T) {
 		const target = "http://localhost:8080s"
 		exp := healthy.Metadata{"type": "http", "target": target, "timeout": "500ms"}
 		act := healthy.HTTP(target).Timeout(500 * time.Millisecond).Metadata()
