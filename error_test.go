@@ -29,9 +29,9 @@ func TestFatalError_Error(t *testing.T) {
 func TestFatalError_Unwrap(t *testing.T) {
 	t.Run("should return the inner error", func(t *testing.T) {
 		exp := errors.New("error")
-		act := healthy.Fatal(exp).(interface{ Unwrap() []error }).Unwrap()
-		if act[0] != exp {
-			t.Errorf("got %v, expected %v", act[0], exp)
+		act := healthy.Fatal(exp).(interface{ Unwrap() error }).Unwrap()
+		if act != exp {
+			t.Errorf("got %v, expected %v", act, exp)
 		}
 	})
 }

@@ -24,6 +24,6 @@ func (e *fatalError) Error() string {
 }
 
 // Unwrap returns the inner error.
-func (e *fatalError) Unwrap() []error {
-	return []error{e.err}
+func (e *fatalError) Unwrap() error {
+	return e.err
 }
