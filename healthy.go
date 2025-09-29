@@ -78,6 +78,15 @@ func Wait(c Check, opts ...Option) error {
 	}
 }
 
+// JoinOptions joins the specified options to simplify re-use.
+func JoinOptions(opts ...Option) Option {
+	return func(o *options) {
+		for _, opt := range opts {
+			opt(o)
+		}
+	}
+}
+
 // WithContext uses the supplied context for check execution.
 // This allows alternative context cancellations to be specified.
 func WithContext(ctx context.Context) Option {

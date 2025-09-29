@@ -64,6 +64,36 @@ func TestWait(t *testing.T) {
 	})
 }
 
+func TestJoinOptions(t *testing.T) {
+	t.Run("should join the options", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // cancel immediately
+
+		err := errors.New("error")
+		var cberr error
+		opts := healthy.JoinOptions(
+			healthy.WithContext(ctx),
+			healthy.WithCallback(func(ctx context.Context, err error) {
+				cberr = err
+			}),
+		)
+
+		synctest.Test(t, func(t *testing.T) {
+			act := healthy.Wait(healthy.CheckFunc(func(ctx context.Context) error {
+				return err
+			}), opts)
+
+			if !errors.Is(act, context.Canceled) || !errors.Is(act, err) {
+				t.Errorf("got %v, expected %v and %v", act, context.Canceled, err)
+			}
+
+			if cberr != err {
+				t.Errorf("got %v, expected %v", cberr, err)
+			}
+		})
+	})
+}
+
 func TestWithContext(t *testing.T) {
 	check := healthy.CheckFunc(func(ctx context.Context) error {
 		return errors.New("error")

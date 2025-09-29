@@ -54,19 +54,18 @@ The initial implementation of the module allowed multiple checks to be executed 
 If parallel check execution is desired, then it is trivial (if a bit more verbose) to execute them using `errgroup`:
 ```
 g, ctx := errgroup.WithContext(context.Background())
+
+opts := healthy.JoinOptions(
+    healthy.WithContext(ctx),
+    healthy.WithCallback(callback),
+)
+
 g.Go(func() error {
-    return healthy.Wait(
-        healthy.TCP("host:8080"),
-        healthy.WithContext(ctx),
-        healthy.WithCallback(callback),
-    )
+    return healthy.Wait(healthy.TCP("host:8080"), opts)
 })
 g.Go(func() error {
-    return healthy.Wait(
-        healthy.HTTP("http://dependency:8080/health"),
-        healthy.WithContext(ctx),
-        healthy.WithCallback(callback),
-    )
+    return healthy.Wait(healthy.HTTP("http://dependency:8080/health"), opts)
 })
-err = g.Wait()
+
+err := g.Wait()
 ```
