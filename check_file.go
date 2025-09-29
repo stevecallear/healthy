@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// File returns a file health check
+// File returns a file health check.
 // The check returns nil if the file exists.
 func File(path string) MetadataCheck {
 	return WithMetadata(func(ctx context.Context) error {

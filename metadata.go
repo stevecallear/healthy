@@ -5,7 +5,7 @@ import (
 )
 
 type (
-	// Metadata represents a check that has metadata
+	// Metadata represents a check that has metadata.
 	MetadataCheck interface {
 		Check
 		Metadata() Metadata
@@ -16,13 +16,13 @@ type (
 		fn CheckFunc
 	}
 
-	// Metadata represents check metadata
+	// Metadata represents check metadata.
 	Metadata map[string]any
 
 	metadataContextKey struct{}
 )
 
-// WithMetadata wraps the CheckFunc with the supplied metadata
+// WithMetadata wraps the [CheckFunc] with the supplied metadata.
 // Metadata should be specified in key/value pairs. The function will
 // panic if the pairs are invalid.
 func WithMetadata(fn CheckFunc, pairs ...any) MetadataCheck {
@@ -49,17 +49,17 @@ func WithMetadata(fn CheckFunc, pairs ...any) MetadataCheck {
 	return c
 }
 
-// Healthy returns nil if the health check is successful
+// Healthy returns nil if the health check is successful.
 func (c *metadataCheck) Healthy(ctx context.Context) error {
 	return c.fn(ctx)
 }
 
-// Metadata returns the check metadata
+// Metadata returns the check metadata.
 func (c *metadataCheck) Metadata() Metadata {
 	return c.md
 }
 
-// GetContextMetadata returns the metadata stored in the context
+// GetContextMetadata returns the [Metadata] stored in the .
 func GetContextMetadata(ctx context.Context) Metadata {
 	if m, ok := ctx.Value(metadataContextKey{}).(Metadata); ok {
 		return m
@@ -67,12 +67,12 @@ func GetContextMetadata(ctx context.Context) Metadata {
 	return Metadata{}
 }
 
-// SetContextMetadata stores the supplied metadata in the context
+// SetContextMetadata stores the supplied [Metadata] in the context.
 func SetContextMetadata(ctx context.Context, m Metadata) context.Context {
 	return context.WithValue(ctx, metadataContextKey{}, m)
 }
 
-// Set sets the metadata key/value
+// Set sets the metadata key/value.
 func (m Metadata) Set(key string, value any) {
 	if m == nil {
 		return
@@ -80,7 +80,7 @@ func (m Metadata) Set(key string, value any) {
 	m[key] = value
 }
 
-// Get gets the metadata value
+// Get gets the metadata value.
 func (m Metadata) Get(key string) any {
 	if m == nil {
 		return nil
