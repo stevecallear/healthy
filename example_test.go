@@ -19,7 +19,7 @@ func ExampleNew() {
 		healthy.HTTP(url).Timeout(time.Millisecond).Expect(http.StatusOK),
 		healthy.WithTimeout(time.Second),
 		healthy.WithDelay(10*time.Millisecond),
-		healthy.WithJitter(0),
+		healthy.WithJitter(10*time.Millisecond),
 	)
 
 	fmt.Println(err)
