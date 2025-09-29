@@ -31,7 +31,6 @@ const mdKeyAttempt = "attempt"
 var defaultOptions = options{
 	timeout: 30 * time.Second,
 	delay:   time.Second,
-	jitter:  100 * time.Millisecond,
 }
 
 // Wait executes the check using the supplied options.
